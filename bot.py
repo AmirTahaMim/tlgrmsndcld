@@ -3,6 +3,7 @@ import tempfile
 import asyncio
 import time
 import re
+import pandas as pd
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
@@ -51,6 +52,32 @@ else:
 
 # User language preferences (user_id -> language)
 user_languages = {}
+
+# CSV database
+CSV_FILE = "users.csv"
+
+
+def init_db():
+    """Create users.csv if it doesn't exist."""
+    if not os.path.exists(CSV_FILE):
+        pd.DataFrame(columns=["users"]).to_csv(CSV_FILE, index=False)
+        print(f"Created {CSV_FILE}")
+
+
+def is_user_registered(user_id: int) -> bool:
+    """Return True if user_id is already in the CSV."""
+    df = pd.read_csv(CSV_FILE)
+    return int(user_id) in df["users"].values
+
+
+def register_user(user_id: int):
+    """Add user_id to the CSV if not already present."""
+    if not is_user_registered(user_id):
+        df = pd.read_csv(CSV_FILE)
+        new_row = pd.DataFrame({"users": [int(user_id)]})
+        df = pd.concat([df, new_row], ignore_index=True)
+        df.to_csv(CSV_FILE, index=False)
+        print(f"New user registered: {user_id}")
 
 # Translation dictionaries
 TRANSLATIONS = {
@@ -192,7 +219,9 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /start command."""
     user = update.effective_user
     user_id = user.id
-    
+
+    register_user(user_id)
+
     # Always check language first, regardless of membership status
     if user_id not in user_languages:
         # Show language selection
@@ -239,8 +268,10 @@ async def language_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle language selection callback."""
     query = update.callback_query
     await query.answer()
-    
+
     user_id = query.from_user.id
+    register_user(user_id)
+
     lang_code = query.data.split('_')[1]  # lang_en or lang_fa
     
     # Store user language preference
@@ -277,9 +308,10 @@ async def check_membership_callback(update: Update, context: ContextTypes.DEFAUL
     """Handle 'I Joined' button callback."""
     query = update.callback_query
     await query.answer()
-    
+
     user_id = query.from_user.id
-    
+    register_user(user_id)
+
     # Check membership
     is_member = await check_channel_membership(update, context)
     
@@ -392,7 +424,8 @@ def download_soundcloud(link: str) -> tuple[str | None, str | None]:
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle text messages."""
     user_id = update.effective_user.id
-    
+    register_user(user_id)
+
     # Check if user has selected language
     if user_id not in user_languages:
         # Show language selection
@@ -498,7 +531,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     """Start the bot."""
     print("Starting Telegram SoundCloud Downloader Bot...")
-    
+
+    init_db()
+
     # Create application
     application = Application.builder().token(BOT_TOKEN).build()
     
