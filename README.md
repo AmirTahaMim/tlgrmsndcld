@@ -10,6 +10,7 @@ A minimal Telegram bot that allows users to download SoundCloud tracks after ver
 - 🔍 Smart link extraction using regex (extracts links from any message)
 - 📤 Automatic file sending and cleanup
 - ⚡ Fast and efficient processing
+- 🗃️ Automatic user tracking — every new user is saved to a local CSV database
 
 ## Prerequisites
 
@@ -121,6 +122,7 @@ See `requirements.txt` for the complete list of dependencies:
 - `python-telegram-bot==20.7` - Telegram bot framework
 - `yt-dlp>=2024.3.10` - SoundCloud downloader (supports best quality audio)
 - `python-dotenv==1.0.0` - Environment variable management
+- `pandas>=2.0.0` - User ID storage and CSV database management
 
 ## License
 
@@ -135,4 +137,5 @@ This project is provided as-is for educational purposes.
 - **File Cleanup**: Files are automatically deleted after Telegram API confirms successful send
 - **Channel Access**: The bot requires administrator privileges in the channel to verify membership
 - **Error Handling**: If member list is inaccessible, the bot will show helpful error messages
+- **User Database**: On first run, the bot creates `users.csv` in the project directory with a `users` column. Every new user's Telegram ID is appended automatically on their first interaction.
 
