@@ -1,6 +1,10 @@
 # Environment variables
 .env
 
+# Runtime data
+users.csv
+channels.json
+
 # Python
 __pycache__/
 *.py[cod]
